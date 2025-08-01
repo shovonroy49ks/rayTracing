@@ -44,10 +44,119 @@ public:
     void roll(float angleDeg);  // rotate around camera's forward axis
 };
 
+// Ray class for ray tracing
+class Ray {
+public:
+    Vec3 start;
+    Vec3 dir;
+
+    Ray(Vec3 start, Vec3 dir) {
+        this->start = start;
+        this->dir = dir;
+        this->dir.normalized();
+    }
+};
+
+// Base class for all drawable objects in the scene
+class Object {
+public:
+    Vec3 reference_point; 
+    double height, width, length;
+    double color[3];
+    double coEfficients[4]; // ambient, diffuse, specular, reflection
+    int shine; 
+
+    Object() {}
+    virtual ~Object() {} // Virtual destructor for proper cleanup
+
+    virtual void draw() = 0;
+    virtual double intersect(Ray *r, double *color, int level) {
+        return -1.0;
+    }
+
+    void setColor(double r, double g, double b) {
+        color[0] = r; color[1] = g; color[2] = b;
+    }
+    void setShine(int s) { shine = s; }
+    void setCoEfficients(double amb, double diff, double spec, double rec) {
+        coEfficients[0] = amb; coEfficients[1] = diff;
+        coEfficients[2] = spec; coEfficients[3] = rec;
+    }
+};
+
+// --- Derived Object Classes ---
+
+class Sphere : public Object {
+public:
+    Sphere(Vec3 center, double radius) {
+        reference_point = center;
+        length = radius;
+    }
+    void draw() override;
+};
+
+class Triangle : public Object {
+public:
+    Vec3 p1, p2, p3;
+    Triangle(Vec3 p1, Vec3 p2, Vec3 p3) {
+        this->p1 = p1; this->p2 = p2; this->p3 = p3;
+    }
+    void draw() override;
+};
+
+class General : public Object {
+public:
+    // A,B,C,D,E,F,G,H,I,J
+    double quadric_coeffs[10];
+
+    General(double coeffs[10], Vec3 ref, double l, double w, double h) {
+        for(int i=0; i<10; ++i) quadric_coeffs[i] = coeffs[i];
+        reference_point = ref;
+        length = l; width = w; height = h;
+    }
+    // General quadric surfaces are not drawn in OpenGL, only in ray tracing
+    void draw() override { /* Does nothing */ }
+};
+
+class Floor : public Object {
+public:
+    Floor(double floorWidth, double tileWidth) {
+        reference_point = Vec3(-floorWidth/2, -floorWidth/2, 0);
+        length = tileWidth;
+    }
+    void draw() override;
+};
+
+
+// --- Light Classes ---
+
+class PointLight {
+public:
+    Vec3 light_pos;
+    double color[3];
+
+    PointLight(Vec3 pos, double r, double g, double b) {
+        light_pos = pos;
+        color[0] = r; color[1] = g; color[2] = b;
+    }
+    void draw();
+};
+
+class SpotLight {
+public:
+    PointLight point_light;
+    Vec3 light_direction;
+    double cutoff_angle;
+
+    SpotLight(PointLight pl, Vec3 dir, double angle) 
+        : point_light(pl), light_direction(dir), cutoff_angle(angle) {}
+    void draw();
+};
 
 
 
-//====================declearation end========================
+
+
 
 Camera::Camera() {
     // Default initialization (can be overridden in main)
