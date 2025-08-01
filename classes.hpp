@@ -9,7 +9,7 @@ class Vec3 {
 public:
     float x, y, z;
     Vec3(): x(0), y(0), z(0) {}
-    Vec3(float x_, float y_, float z_) : x(x_), y(y_), z(z_) {}
+    Vec3(float x_, float y_, float z_) : x(x_), y(y_), z(z_) {printf("Vec3(%f, %f, %f)\n", x, y, z);}
     Vec3 operator+(const Vec3 &v) const { return Vec3(x+v.x, y+v.y, z+v.z); }
     Vec3 operator-(const Vec3 &v) const { return Vec3(x-v.x, y-v.y, z-v.z); }
     Vec3 operator*(float s) const { return Vec3(x*s, y*s, z*s); }
@@ -121,7 +121,8 @@ public:
 class Floor : public Object {
 public:
     Floor(double floorWidth, double tileWidth) {
-        reference_point = Vec3(-floorWidth/2, -floorWidth/2, 0);
+        reference_point = Vec3(float(-floorWidth/2), float(-floorWidth/2),0 );
+        
         length = tileWidth;
     }
     void draw() override;
@@ -154,7 +155,7 @@ public:
 };
 
 
-
+//====================declearation end========================
 
 
 
@@ -236,4 +237,73 @@ void Camera::roll(float angleDeg) {
     up = newUp.normalized();
 }
 
+
+// --- Helper function to draw a sphere primitive ---
+// This is not part of a class, just a utility for Sphere::draw
+void drawSpherePrimitive(Vec3 center, double radius, int slices, int stacks) {
+    glPushMatrix();
+    glTranslatef(center.x, center.y, center.z);
+    glutSolidSphere(radius, slices, stacks);
+    glPopMatrix();
+}
+void Sphere::draw() {
+    glColor3f(color[0], color[1], color[2]);
+    drawSpherePrimitive(reference_point, length, 20, 20);
+}
+
+void Triangle::draw() {
+    glBegin(GL_TRIANGLES);
+    glColor3f(color[0], color[1], color[2]);
+    {
+    glVertex3f(p1.x, p1.y, p1.z);
+    glVertex3f(p2.x, p2.y, p2.z);
+    glVertex3f(p3.x, p3.y, p3.z);
+    }
+    glEnd();
+}
+void Floor::draw() {
+    // The total width of the floor (e.g., 1000)
+    double floorWidth = -reference_point.x * 2;
+    
+    // The width of a single tile (e.g., 20)
+    double tileWidth = length; 
+
+    // Loop from the negative edge to the positive edge of the floor
+    
+    for (int i = -floorWidth / 2; i < floorWidth / 2; i += tileWidth) {
+        for (int j = -floorWidth / 2; j < floorWidth / 2; j += tileWidth) {
+
+            // To create the alternating pattern, we can look at the parity
+            // of the tile's coordinates. Integer division gives us the tile "index".
+            if (((i / (int)tileWidth) + (j / (int)tileWidth)) % 2 == 0) {
+                // You can set these to any two colors you like.
+                printf("black\n");
+                glColor3f(0.1f, 0.1f, 0.1f); // Dark Gray
+            } else {
+                glColor3f(0.9f, 0.9f, 0.9f); // Light Gray
+            }
+
+            // Draw a single tile (quad) on the z=0 plane
+            glBegin(GL_QUADS);
+            {
+                glVertex3f(i, j, 0);
+                glVertex3f(i + tileWidth, j, 0);
+                glVertex3f(i + tileWidth, j + tileWidth, 0);
+                glVertex3f(i, j + tileWidth, 0);
+            }
+            glEnd();
+        }
+    }
+}void PointLight::draw() {
+    glPointSize(8.0f); // Make the point larger to be easily visible
+    glColor3f(color[0], color[1], color[2]);
+    glBegin(GL_POINTS);
+    {
+        glVertex3f(light_pos.x, light_pos.y, light_pos.z);
+    }
+    glEnd();
+}
+void SpotLight::draw() {
+    point_light.draw();
+}
 #endif // CLASSES_HPP
