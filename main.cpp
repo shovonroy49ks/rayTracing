@@ -41,8 +41,6 @@ void display()
 
 void reshape(int w, int h)
 {
-    if (h == 0)
-        h = 1;
     float ratio = (float)w / (float)h;
     glViewport(0, 0, w, h);
     glMatrixMode(GL_PROJECTION);
